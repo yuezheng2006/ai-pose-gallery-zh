@@ -11,16 +11,16 @@
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
 <meta name="application-name" content="POSE Atlas">
 <meta name="theme-color" content="#f5f7fb">
-<link rel="canonical" href="https://ai-pose-gallery.anhao.app/">
+<link rel="canonical" href="https://ai-pose.cyber101.cc/">
 <link rel="sitemap" type="application/xml" href="/sitemap.xml">
-<link rel="alternate" hreflang="zh-CN" href="https://ai-pose-gallery.anhao.app/">
+<link rel="alternate" hreflang="zh-CN" href="https://ai-pose.cyber101.cc/">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:site_name" content="POSE Atlas">
 <meta property="og:title" content="AI 姿势参考库｜288 组人体姿势 · 1439 张多角度参考图">
 <meta property="og:description" content="按体系、分类、视角筛选 288 组人体姿势，多角度对比并下载 900×1200 原图，适用于 AI 绘画、构图与动作参考。">
-<meta property="og:url" content="https://ai-pose-gallery.anhao.app/">
-<meta property="og:image" content="https://ai-pose-gallery.anhao.app/og-cover.jpg">
+<meta property="og:url" content="https://ai-pose.cyber101.cc/">
+<meta property="og:image" content="https://pose-images.cyber101.cc/og-cover.jpg">
 <meta property="og:image:type" content="image/jpeg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -28,7 +28,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="AI 姿势参考库｜288 组人体姿势 · 1439 张参考图">
 <meta name="twitter:description" content="288 组人体姿势、1439 张多角度参考图，支持筛选、对比与下载原图。">
-<meta name="twitter:image" content="https://ai-pose-gallery.anhao.app/og-cover.jpg">
+<meta name="twitter:image" content="https://pose-images.cyber101.cc/og-cover.jpg">
 <meta name="twitter:image:alt" content="AI 姿势参考库页面预览">
 <meta name="twitter:site" content="@anhao_ai">
 <meta name="twitter:creator" content="@anhao_ai">
@@ -39,8 +39,8 @@
   "@graph": [
     {
       "@type": "WebSite",
-      "@id": "https://ai-pose-gallery.anhao.app/#website",
-      "url": "https://ai-pose-gallery.anhao.app/",
+      "@id": "https://ai-pose.cyber101.cc/#website",
+      "url": "https://ai-pose.cyber101.cc/",
       "name": "POSE Atlas",
       "alternateName": "AI 姿势参考库",
       "description": "288 组人体姿势、1439 张多角度 AI 绘画姿势参考图。",
@@ -48,16 +48,16 @@
     },
     {
       "@type": "ImageGallery",
-      "@id": "https://ai-pose-gallery.anhao.app/#webpage",
-      "url": "https://ai-pose-gallery.anhao.app/",
+      "@id": "https://ai-pose.cyber101.cc/#webpage",
+      "url": "https://ai-pose.cyber101.cc/",
       "name": "AI 姿势参考库 · POSE Atlas",
       "description": "收录 288 组人体姿势、1439 张 900×1200 多角度参考图，支持分类筛选、多角度对比与原图下载。",
-      "isPartOf": { "@id": "https://ai-pose-gallery.anhao.app/#website" },
+      "isPartOf": { "@id": "https://ai-pose.cyber101.cc/#website" },
       "inLanguage": "zh-CN",
       "about": { "@type": "Thing", "name": "人体姿势参考" },
       "primaryImageOfPage": {
         "@type": "ImageObject",
-        "url": "https://ai-pose-gallery.anhao.app/og-cover.jpg",
+        "url": "https://pose-images.cyber101.cc/og-cover.jpg",
         "width": 1200,
         "height": 630
       }
@@ -481,6 +481,12 @@ main{padding:22px 0 54px}
 'use strict';
 const ANGLES = ['正面', '俯视', '仰视', '侧面', '斜侧'];
 const PAGE_SIZE = { pose: 60, single: 96 };
+const ASSET_BASE = 'https://pose-images.cyber101.cc/';
+const assetUrl = path => {
+  if (!path) return path;
+  if (/^https?:\/\//i.test(path)) return path;
+  return ASSET_BASE + String(path).replace(/^\//, '');
+};
 const state = { line: '', category: '', angle: '', query: '', view: 'pose', shown: PAGE_SIZE.pose };
 const $ = selector => document.querySelector(selector);
 const grid = $('#grid');
@@ -562,14 +568,14 @@ function computeList() {
 }
 
 function cardImage(item, name, number) {
-  return `<div class="card-image"><img class="main-image" src="${esc(item.缩略图)}" alt="${esc(name)} · ${esc(item.角度)}" loading="lazy" decoding="async"><div class="image-top"><span class="pose-no">${esc(number)}</span><span class="angle-tag">${esc(item.角度)}</span></div><span class="zoom-hint">${icon('expand')}</span></div>`;
+  return `<div class="card-image"><img class="main-image" src="${esc(assetUrl(item.缩略图))}" alt="${esc(name)} · ${esc(item.角度)}" loading="lazy" decoding="async"><div class="image-top"><span class="pose-no">${esc(number)}</span><span class="angle-tag">${esc(item.角度)}</span></div><span class="zoom-hint">${icon('expand')}</span></div>`;
 }
 
 function poseCard(entry, index) {
   const { group, item } = entry;
   const strip = ANGLES.filter(angle => group.angles[angle]).map(angle => {
     const angleItem = group.angles[angle];
-    return `<button class="angle-thumb${angleItem === item ? ' on' : ''}" type="button" data-angle="${esc(angle)}" title="${esc(angle)}" aria-label="查看${esc(angle)}视角"><img src="${esc(angleItem.缩略图)}" alt="" loading="lazy" decoding="async"><span>${esc(angle)}</span></button>`;
+    return `<button class="angle-thumb${angleItem === item ? ' on' : ''}" type="button" data-angle="${esc(angle)}" title="${esc(angle)}" aria-label="查看${esc(angle)}视角"><img src="${esc(assetUrl(angleItem.缩略图))}" alt="" loading="lazy" decoding="async"><span>${esc(angle)}</span></button>`;
   }).join('');
   return `<article class="pose-card" tabindex="0" data-index="${index}" aria-label="${esc(group.name)}，${esc(item.角度)}视角">${cardImage(item, group.name, group.number)}<div class="card-body"><h3>${esc(group.name)}</h3><div class="card-meta"><span class="system">${esc(group.system)}</span><span class="meta-dot">·</span><span class="category">${esc(group.category)}</span></div></div><div class="angle-strip">${strip}</div></article>`;
 }
@@ -647,7 +653,7 @@ function resetAll() {
 function updateCardPreview(card, entry) {
   const item = entry.item;
   const image = card.querySelector('.main-image');
-  image.src = item.缩略图;
+  image.src = assetUrl(item.缩略图);
   image.alt = `${entry.group.name} · ${item.角度}`;
   card.querySelector('.angle-tag').textContent = item.角度;
   card.setAttribute('aria-label', `${entry.group.name}，${item.角度}视角`);
@@ -782,7 +788,7 @@ function showViewer() {
   entry.item = item;
   const token = ++viewerState.token;
   const image = $('#viewerImage');
-  image.src = item.缩略图;
+  image.src = assetUrl(item.缩略图);
   image.alt = `${item.姿势名称} · ${item.角度}`;
   image.classList.add('is-loading');
   $('#imageStatus').textContent = '正在加载原图…';
@@ -791,7 +797,7 @@ function showViewer() {
   full.decoding = 'async';
   full.onload = () => {
     if (token !== viewerState.token) return;
-    image.src = item.原图;
+    image.src = assetUrl(item.原图);
     image.classList.remove('is-loading');
     $('#imageStatus').hidden = true;
   };
@@ -801,7 +807,7 @@ function showViewer() {
     $('#imageStatus').textContent = '原图加载失败，可点击新窗口重试';
     $('#imageStatus').hidden = false;
   };
-  full.src = item.原图;
+  full.src = assetUrl(item.原图);
 
   $('#viewerNumber').textContent = item.姿势编号 || 'POSE';
   $('#viewerPosition').textContent = `${viewerState.index + 1} / ${currentList.length}`;
@@ -811,12 +817,12 @@ function showViewer() {
   $('#viewerMeta').innerHTML = [['体系', item.体系], ['姿势编号', item.姿势编号 || '—'], ['动作分类', item.分类 || '—'], ['当前视角', item.角度 || '—'], ['图片规格', '900 × 1200 PNG']].map(([key, value]) => `<dt>${key}</dt><dd>${esc(value)}</dd>`).join('');
   $('#viewerAngles').innerHTML = ANGLES.filter(angle => group.angles[angle]).map(angle => {
     const angleItem = group.angles[angle];
-    return `<button class="angle-thumb${angleItem === item ? ' on' : ''}" type="button" data-angle="${esc(angle)}" aria-label="切换到${esc(angle)}"><img src="${esc(angleItem.缩略图)}" alt="${esc(angle)}"><span>${esc(angle)}</span></button>`;
+    return `<button class="angle-thumb${angleItem === item ? ' on' : ''}" type="button" data-angle="${esc(angle)}" aria-label="切换到${esc(angle)}"><img src="${esc(assetUrl(angleItem.缩略图))}" alt="${esc(angle)}"><span>${esc(angle)}</span></button>`;
   }).join('');
   const download = $('#downloadImage');
-  download.href = item.原图;
+  download.href = assetUrl(item.原图);
   download.setAttribute('download', `${item.id}.png`);
-  $('#openImage').href = item.原图;
+  $('#openImage').href = assetUrl(item.原图);
 }
 
 function stepAngle(direction) {

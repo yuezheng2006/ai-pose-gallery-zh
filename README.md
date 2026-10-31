@@ -50,7 +50,7 @@
 - `robots.txt` 放行全站并声明 sitemap，`sitemap.xml` 指向首页
 - 语义结构：单一 H1、分区 H2、卡片 H3；缩略图 `alt` 含姿势名与视角，图片懒加载
 
-仓库中的绝对地址统一指向 `https://ai-pose-gallery.anhao.app/`。Fork 后如使用其他域名，需同步替换 `index.html` 的 canonical、`og:*`、`twitter:*`、JSON-LD，以及 `robots.txt`、`sitemap.xml` 中的地址。
+本 fork 生产地址为 `https://ai-pose.cyber101.cc/`，图片由 Cloudflare R2 代理域 `https://pose-images.cyber101.cc/` 提供。canonical / OG / sitemap 已指向上述域名。
 
 ## 数据规模
 
@@ -154,10 +154,8 @@ python3 scripts/verify.py
 4. **Save and Deploy**，约 2–5 分钟得到 `https://<project>.pages.dev`
 5. 之后每次 `git push` 自动重新发布
 
-> ⚠️ **不要**把 Build output directory 直接填 `/`。仓库根目录含 `.git`（数百 MB），
-> Cloudflare 会把它当静态资源扫描，pack 文件超过 25 MiB 单文件限制会导致构建失败。
-> `scripts/build.sh` 只拷贝 `index.html`、`_headers`、`data/`、`thumbs/`、`img/` 到 `dist/`。
-> 若确实想用根目录，仓库已附 `.assetsignore` 兜底排除非站点文件。
+> `scripts/build.sh` 只拷贝 `index.html`、`_headers`、`data/` 和 `og-cover.jpg`。
+> 图片由 R2 代理域 `pose-images.cyber101.cc` 提供，不再打进站点产物。
 
 > 站点限制：单文件 ≤ 25 MiB、每次部署 ≤ 20,000 个文件。本仓库最大文件 917 KB、共 2883 个文件，均在限制内。
 
