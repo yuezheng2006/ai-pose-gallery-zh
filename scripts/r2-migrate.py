@@ -18,8 +18,13 @@ ROOT = Path(__file__).resolve().parents[1]
 ACCOUNT = "f6a6ca266227aeaae53449f89cded47f"
 BUCKET = "ai-pose-assets"
 SOURCE = os.environ.get("AI_POSE_SOURCE", "https://ai-pose.cyber101.cc").rstrip("/")
+LOCAL_ROOTS = [
+    ROOT,
+    Path(os.environ.get("ASSET_LOCAL", "/tmp/upstream-ai-pose")),
+]
 CACHE = "public, max-age=31536000, immutable"
 UA = "ai-pose-r2-migrate/1.0"
+JSON_FILES = ("pose-zh.json", "costume-zh.json", "portrait-zh.json")
 
 
 def token() -> str:
@@ -37,15 +42,20 @@ def token() -> str:
 
 
 def keys() -> list[str]:
-    data = json.loads((ROOT / "data/pose-zh.json").read_text())
     found = []
-    for item in data:
-        for field in ("缩略图", "原图"):
-            path = item.get(field)
-            if path:
-                found.append(path.lstrip("/"))
+    for name in JSON_FILES:
+        path = ROOT / "data" / name
+        if not path.exists():
+            continue
+        data = json.loads(path.read_text())
+        for item in data:
+            for field in ("缩略图", "预览图", "原图"):
+                value = item.get(field)
+                if value:
+                    found.append(value.lstrip("/"))
     found.append("og-cover.jpg")
-    return sorted(set(found))
+    unique = sorted(set(found), key=lambda key: (0 if key.startswith("thumbs/") else 1, key))
+    return unique
 
 
 def listed(credential: str) -> dict[str, dict]:
@@ -80,14 +90,28 @@ def listed(credential: str) -> dict[str, dict]:
 
 
 def fetch_source(key: str) -> bytes:
-    local = ROOT / key
-    if local.is_file():
-        return local.read_bytes()
-    url = SOURCE + "/" + key
-    request = urllib.request.Request(url, headers={"User-Agent": UA})
-    opener = urllib.request.build_opener()
-    with opener.open(request, timeout=60) as response:
-        return response.read()
+    for root in LOCAL_ROOTS:
+        local = root / key
+        if local.is_file() and local.stat().st_size > 1024:
+            return local.read_bytes()
+    last_error = None
+    for base in (
+        SOURCE,
+        "https://cdn.jsdelivr.net/gh/anhao/ai-pose-gallery-zh@main",
+        "https://raw.githubusercontent.com/anhao/ai-pose-gallery-zh/main",
+    ):
+        url = base.rstrip("/") + "/" + key
+        request = urllib.request.Request(url, headers={"User-Agent": UA})
+        try:
+            with urllib.request.urlopen(request, timeout=60) as response:
+                body = response.read()
+            if len(body) > 1024:
+                return body
+            last_error = f"too small from {base}"
+        except Exception as error:  # noqa: BLE001
+            last_error = str(error)
+            continue
+    raise RuntimeError(f"{key}: missing local file and remote fetch failed ({last_error})")
 
 
 def put_object(key: str, body: bytes, credential: str) -> None:

@@ -1,6 +1,6 @@
 # AI Pose Gallery · 中文版
 
-> 288 组 / 1439 张 AI 人体姿势参考图，日文数据完整汉化，附可直接部署的响应式静态画廊。
+> 姿势 1439 张 + 服装 1407 套 + 人像 1499 张，三合一 AI 角色参考库。
 
 ![画廊预览](docs/preview.jpg)
 
@@ -28,7 +28,8 @@
 
 ## 页面功能
 
-- 4 个体系页签，显示各体系的图片数与姿势组数
+- 总览页提供姿势、服装、人像三个入口
+- 姿势库：4 个体系页签，显示各体系的图片数与姿势组数
 - 姿势名、编号、ID、分类关键词搜索，支持 `/` 快速聚焦
 - 动作分类、5 种视角组合筛选，可一键重置
 - **按姿势分组 / 逐张浏览**双模式，分组卡片带多角度缩略图
@@ -36,7 +37,9 @@
 - 灯箱先显示缩略图、再加载 900×1200 原图，支持直接下载 PNG、复制 ID、新窗口打开
 - `← / →` 切换角度，`↑ / ↓` 切换姿势，`Esc` 关闭；手机支持左右滑动
 - PC 多列网格、手机双列网格，移动端筛选面板可展开/收起
-- 使用指南与注意事项弹窗，页脚标注图片来源与维护者链接
+- 使用指南与注意事项弹窗
+- 服装库：8 个穿搭分类、标签与英文关键词检索
+- 人像库：正脸参考 / 造型氛围，按发长、精选、热门筛选
 
 ## SEO 与分享
 
@@ -50,7 +53,7 @@
 - `robots.txt` 放行全站并声明 sitemap，`sitemap.xml` 指向首页
 - 语义结构：单一 H1、分区 H2、卡片 H3；缩略图 `alt` 含姿势名与视角，图片懒加载
 
-本 fork 生产地址为 `https://ai-pose.cyber101.cc/`，图片由 Cloudflare R2 代理域 `https://pose-images.cyber101.cc/` 提供。canonical / OG / sitemap 已指向上述域名。
+本 fork 生产地址为 `https://ai-pose.cyber101.cc/`，图片由 Cloudflare R2 代理域 `https://pose-images.cyber101.cc/` 提供。公开站点含姿势 / 服装 / 人像入口，不展示 GitHub 仓库。
 
 ## 数据规模
 
@@ -68,13 +71,20 @@
 
 ```
 .
-├── index.html              # 单页画廊（零依赖，直接打开即可）
+├── index.html              # 总览入口（姿势 / 服装 / 人像）
+├── poses/index.html        # 姿势库
+├── costumes/index.html     # 服装库
+├── portraits/index.html    # 人像库
+├── site.css                # 共用样式
+├── gallery-simple.js       # 服装 / 人像画廊逻辑
 ├── robots.txt              # 搜索引擎抓取规则
 ├── sitemap.xml             # 站点地图
 ├── og-cover.jpg            # 1200×630 社交分享封面
 ├── data/
 │   ├── pose.json           # 原始日文数据（1439 条，未改动）
-│   ├── pose-zh.json        # 中文数据（前端实际读取，含检索字段）
+│   ├── pose-zh.json        # 姿势中文数据
+│   ├── costume-zh.json     # 服装中文数据
+│   ├── portrait-zh.json    # 人像中文数据
 │   ├── meta.json           # 原始体系分类
 │   ├── meta-zh.json        # 中文体系分类
 │   └── translations.csv    # 日⇄中对照表（323 条，便于校对）

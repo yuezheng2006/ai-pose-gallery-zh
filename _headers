@@ -13,6 +13,22 @@
   Cache-Control: public, max-age=0, must-revalidate
 /
   Cache-Control: public, max-age=0, must-revalidate
+/poses
+  Cache-Control: public, max-age=0, must-revalidate
+/poses/
+  Cache-Control: public, max-age=0, must-revalidate
+/costumes
+  Cache-Control: public, max-age=0, must-revalidate
+/costumes/
+  Cache-Control: public, max-age=0, must-revalidate
+/portraits
+  Cache-Control: public, max-age=0, must-revalidate
+/portraits/
+  Cache-Control: public, max-age=0, must-revalidate
+/site.css
+  Cache-Control: public, max-age=3600
+/gallery-simple.js
+  Cache-Control: public, max-age=3600
 
 # SEO 与分享资源
 /robots.txt

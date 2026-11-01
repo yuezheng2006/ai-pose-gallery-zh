@@ -8,7 +8,8 @@ cd "$(dirname "$0")/.."
 rm -rf dist
 mkdir -p dist
 
-cp -R index.html _headers robots.txt sitemap.xml og-cover.jpg data dist/
+cp index.html site.css gallery-simple.js _headers robots.txt sitemap.xml og-cover.jpg dist/
+cp -R poses costumes portraits data dist/
 
 echo "dist ready:"
 du -sh dist
