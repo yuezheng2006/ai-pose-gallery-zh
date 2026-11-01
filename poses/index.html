@@ -172,7 +172,8 @@
         <div class="viewer-angles" id="viewerAngles"></div>
       </div>
       <div class="download-stack">
-        <a class="download-btn" id="downloadImage" href="#" download><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3v12m-5-5 5 5 5-5M4 20h16"/></svg>下载原尺寸 PNG</a>
+        <button class="download-btn" type="button" id="addToRecipe">加入合成</button>
+        <a class="open-btn" id="downloadImage" href="#" download><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3v12m-5-5 5 5 5-5M4 20h16"/></svg>下载原图</a>
         <a class="open-btn" id="openImage" href="#" target="_blank" rel="noopener noreferrer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M14 4h6v6m0-6-9 9M19 14v6H4V5h6"/></svg>新窗口打开</a>
       </div>
       <dl class="metadata" id="viewerMeta"></dl>
@@ -186,6 +187,7 @@
   <div class="info-content" id="infoContent"></div>
 </dialog>
 
+<script src="/chrome.js"></script>
 <script>
 (() => {
 'use strict';
@@ -219,7 +221,7 @@ function groupKey(item) { return `${item.体系}|${item.姿势编号 || item.id}
 
 function prepareData(data) {
   DATA = data;
-  LINES = [...new Set(DATA.map(item => item.体系))];
+  LINES = [...new Set(visibleItems(DATA).map(item => item.体系))];
   DATA.forEach(item => {
     item._search = `${item.姿势名称} ${item.id} ${item.分类} ${item.姿势编号}`.toLowerCase();
     const key = groupKey(item);
@@ -237,8 +239,8 @@ function prepareData(data) {
     group.order = ANGLES.map(angle => group.angles[angle]).filter(Boolean);
     group.items.forEach(item => { if (!group.order.includes(item)) group.order.push(item); });
   });
-  $('#statPoses').textContent = format(GROUPS.length);
-  $('#statImages').textContent = format(DATA.length);
+  $('#statPoses').textContent = format(GROUPS.filter(group => visibleItems(group.items).length).length);
+  $('#statImages').textContent = format(visibleItems(DATA).length);
   renderTabs();
   renderCategoryOptions();
   renderAngleFilter();
@@ -246,12 +248,15 @@ function prepareData(data) {
 }
 
 function renderTabs() {
-  const tabs = [['', '全部', DATA.length, GROUPS.length], ...LINES.map(line => [line, line, DATA.filter(item => item.体系 === line).length, GROUPS.filter(group => group.system === line).length])];
-  $('#lineTabs').innerHTML = tabs.map(([value, label, images, poses]) => `<button class="line-tab" type="button" role="tab" data-line="${esc(value)}" aria-selected="${state.line === value}"><span class="tab-name">${esc(label)}</span><span class="tab-count">${format(images)} 张 · ${format(poses)} 组</span></button>`).join('');
+  const images = visibleItems(DATA);
+  const groups = GROUPS.filter(group => visibleItems(group.items).length);
+  const lines = [...new Set(images.map(item => item.体系))];
+  const tabs = [['', '全部', images.length, groups.length], ...lines.map(line => [line, line, images.filter(item => item.体系 === line).length, groups.filter(group => group.system === line).length])];
+  $('#lineTabs').innerHTML = tabs.map(([value, label, imageCount, poseCount]) => `<button class="line-tab" type="button" role="tab" data-line="${esc(value)}" aria-selected="${state.line === value}"><span class="tab-name">${esc(label)}</span><span class="tab-count">${format(imageCount)} 张 ${format(poseCount)} 组</span></button>`).join('');
 }
 
 function renderCategoryOptions() {
-  const categories = [...new Set(DATA.filter(item => !state.line || item.体系 === state.line).map(item => item.分类).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'zh-CN'));
+  const categories = [...new Set(visibleItems(DATA).filter(item => !state.line || item.体系 === state.line).map(item => item.分类).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'zh-CN'));
   $('#categorySelect').innerHTML = '<option value="">全部分类</option>' + categories.map(category => `<option value="${esc(category)}"${state.category === category ? ' selected' : ''}>${esc(category)}</option>`).join('');
 }
 
@@ -259,7 +264,15 @@ function renderAngleFilter() {
   $('#angleFilter').innerHTML = ['', ...ANGLES].map(angle => `<button type="button" data-angle="${esc(angle)}" aria-pressed="${state.angle === angle}">${angle || '全部视角'}</button>`).join('');
 }
 
+function visibleItems(list) {
+  const atlas = window.POSE_ATLAS;
+  if (!atlas || !atlas.isSafeMode()) return list;
+  return list.filter(item => !atlas.isNsfwPose(item));
+}
+
 function hit(item) {
+  const atlas = window.POSE_ATLAS;
+  if (atlas && atlas.isSafeMode() && atlas.isNsfwPose(item)) return false;
   return (!state.line || item.体系 === state.line) &&
     (!state.category || item.分类 === state.category) &&
     (!state.angle || item.角度 === state.angle) &&
@@ -533,6 +546,8 @@ function showViewer() {
   download.href = assetUrl(item.原图);
   download.setAttribute('download', `${item.id}.png`);
   $('#openImage').href = assetUrl(item.原图);
+  const add = $('#addToRecipe');
+  if (add) add.textContent = '加入合成';
 }
 
 function stepAngle(direction) {
@@ -570,6 +585,20 @@ $('#copyId').addEventListener('click', async () => {
   } catch {
     $('#copyId').textContent = '请手动复制';
   }
+});
+$('#addToRecipe')?.addEventListener('click', () => {
+  if (!viewerState.item || !window.POSE_ATLAS) return;
+  window.POSE_ATLAS.addToRecipe('pose', viewerState.item);
+  $('#addToRecipe').textContent = '已加入';
+});
+window.addEventListener('pose-atlas-safe-mode', () => {
+  LINES = [...new Set(visibleItems(DATA).map(item => item.体系))];
+  if (state.line && !LINES.includes(state.line)) state.line = '';
+  $('#statPoses').textContent = format(GROUPS.filter(group => visibleItems(group.items).length).length);
+  $('#statImages').textContent = format(visibleItems(DATA).length);
+  renderTabs();
+  renderCategoryOptions();
+  resetView();
 });
 
 let touchStart = null;

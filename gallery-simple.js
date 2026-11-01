@@ -36,15 +36,18 @@ function prepareData(data) {
     $('#statFeatured').textContent = format(featured);
     $('#statHot').textContent = format(hot);
   }
-  $('#statTotal').textContent = format(DATA.length);
+  $('#statTotal').textContent = format(visibleData().length);
   renderTabs();
   renderHairFilter();
   render();
 }
 
 function renderTabs() {
-  const tabs = [['', PAGE.allLabel, DATA.length], ...TABS.map(tab => [tab, tab, DATA.filter(item => item[PAGE.tabField] === tab).length])];
-  $('#lineTabs').innerHTML = tabs.map(([value, label, count]) => `<button class="line-tab" type="button" role="tab" data-tab="${esc(value)}" aria-selected="${state.tab === value}"><span class="tab-name">${esc(label)}</span><span class="tab-count">${format(count)} ${esc(PAGE.unit)}</span></button>`).join('');
+  const source = visibleData();
+  const tabs = (PAGE.tabs || [...new Set(source.map(item => item[PAGE.tabField]).filter(Boolean))])
+    .filter(tab => source.some(item => item[PAGE.tabField] === tab));
+  const shown = [['', PAGE.allLabel, source.length], ...tabs.map(tab => [tab, tab, source.filter(item => item[PAGE.tabField] === tab).length])];
+  $('#lineTabs').innerHTML = shown.map(([value, label, count]) => `<button class="line-tab" type="button" role="tab" data-tab="${esc(value)}" aria-selected="${state.tab === value}"><span class="tab-name">${esc(label)}</span><span class="tab-count">${format(count)} ${esc(PAGE.unit)}</span></button>`).join('');
 }
 
 function renderHairFilter() {
@@ -54,7 +57,16 @@ function renderHairFilter() {
   hair.innerHTML = values.map(value => `<button type="button" data-hair="${esc(value)}" aria-pressed="${state.hair === value}">${value || '全部发长'}</button>`).join('');
 }
 
+function visibleData() {
+  const atlas = window.POSE_ATLAS;
+  if (!atlas || !atlas.isSafeMode()) return DATA;
+  if (PAGE.kind === 'costume') return DATA.filter(item => !atlas.isNsfwCostume(item));
+  return DATA;
+}
+
 function hit(item) {
+  const atlas = window.POSE_ATLAS;
+  if (atlas && atlas.isSafeMode() && PAGE.kind === 'costume' && atlas.isNsfwCostume(item)) return false;
   if (state.tab && item[PAGE.tabField] !== state.tab) return false;
   if (state.hair && item.发长 !== state.hair) return false;
   if (state.pick === 'featured' && !item.精选) return false;
@@ -269,7 +281,7 @@ function showViewer() {
   };
   full.src = assetUrl(item.原图);
 
-  $('#viewerNumber').textContent = PAGE.kind === 'costume' ? 'COSTUME' : 'PORTRAIT';
+  $('#viewerNumber').textContent = PAGE.kind === 'costume' ? '服装' : '人像';
   $('#viewerPosition').textContent = `${viewerState.index + 1} / ${currentList.length}`;
   $('#viewerTitle').textContent = title;
   $('#viewerId').textContent = item.id;
@@ -287,6 +299,8 @@ function showViewer() {
   download.href = assetUrl(item.原图);
   download.setAttribute('download', `${item.id}.${ext}`);
   $('#openImage').href = assetUrl(item.原图);
+  const add = $('#addToRecipe');
+  if (add) add.textContent = '加入合成';
 }
 
 function stepItem(direction) {
@@ -307,6 +321,19 @@ $('#copyId').addEventListener('click', async () => {
   } catch {
     $('#copyId').textContent = '请手动复制';
   }
+});
+$('#addToRecipe')?.addEventListener('click', () => {
+  const item = currentList[viewerState.index];
+  const atlas = window.POSE_ATLAS;
+  if (!item || !atlas) return;
+  atlas.addToRecipe(PAGE.kind, item);
+  $('#addToRecipe').textContent = '已加入';
+});
+window.addEventListener('pose-atlas-safe-mode', () => {
+  if (PAGE.kind === 'costume' && state.tab && window.POSE_ATLAS?.isNsfwCostume({ 分类: state.tab })) state.tab = '';
+  $('#statTotal').textContent = format(visibleData().length);
+  renderTabs();
+  resetView();
 });
 
 let touchStart = null;

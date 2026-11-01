@@ -16,6 +16,7 @@ NAV = {
     "/poses/": "姿势",
     "/costumes/": "服装",
     "/portraits/": "人像",
+    "/studio/": "合成",
 }
 
 BRAND = """    <a class="brand" href="/" aria-label="返回参考库首页">

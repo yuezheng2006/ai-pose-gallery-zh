@@ -140,7 +140,8 @@
       </div>
       <div id="viewerTags"></div>
       <div class="download-stack">
-        <a class="download-btn" id="downloadImage" href="#" download><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3v12m-5-5 5 5 5-5M4 20h16"/></svg>下载原图</a>
+        <button class="download-btn" type="button" id="addToRecipe">加入合成</button>
+        <a class="open-btn" id="downloadImage" href="#" download><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3v12m-5-5 5 5 5-5M4 20h16"/></svg>下载原图</a>
         <a class="open-btn" id="openImage" href="#" target="_blank" rel="noopener noreferrer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M14 4h6v6m0-6-9 9M19 14v6H4V5h6"/></svg>新窗口打开</a>
       </div>
       <dl class="metadata" id="viewerMeta"></dl>
@@ -169,6 +170,7 @@ window.GALLERY_PAGE = {
   }
 };
 </script>
+<script src="/chrome.js"></script>
 <script src="/gallery-simple.js"></script>
 <script defer src="https://u.authbox.cn/script.js" data-website-id="cde8a23b-4bf6-4ded-8cd9-2c9551dc8d38"></script>
 </body>
