@@ -364,6 +364,9 @@ main{padding:22px 0 54px}
 .studio-more-settings{margin-top:16px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px}
 .studio-more-settings summary{cursor:pointer;font-size:14px;font-weight:600}
 .studio-settings-body{margin-top:14px}
+#keyForm{padding:16px 18px 20px}
+#keyForm .download-btn{width:100%;margin-top:8px}
+#keyForm .studio-hint{margin-top:0}
 @media(max-width:860px){
   .studio-pickers{grid-template-columns:1fr}
   .studio-picker{max-height:36vh}

@@ -39,6 +39,9 @@ const DEFAULT_CFG = {
   doubaoKey: '',
   doubaoModel: 'doubao-seedream-4-0-250828',
   doubaoBase: 'https://ark.cn-beijing.volces.com',
+  customKey: '',
+  customModel: 'gpt-image-1',
+  customBase: 'https://api.openai.com',
   useProxy: true
 };
 
@@ -47,7 +50,7 @@ const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp
 const INFO = {
   guide: {
     title: '使用指南',
-    html: '<ul><li>在本页三列里直接点选人像、服装、姿势，不必跳到图库。</li><li>点<strong>生成</strong>。本机有 ComfyUI 会自动用它；否则填写通义千问或豆包密钥。</li><li>随机一套只填槽位，不会提交生成。</li></ul>'
+    html: '<ul><li>在本页三列里直接点选人像、服装、姿势，不必跳到图库。</li><li>点<strong>设置密钥</strong>填入自己的 API Key。支持通义千问、豆包，或任意 OpenAI 兼容地址。</li><li>点<strong>生成</strong>。本机有 ComfyUI 且未保存密钥时会自动用它。随机一套只填槽位，不会提交生成。</li></ul>'
   },
   notice: {
     title: '注意事项',
@@ -72,6 +75,20 @@ function loadCfg() {
 
 function saveCfg(cfg) {
   localStorage.setItem(CFG_KEY, JSON.stringify(cfg));
+}
+
+function cloudFields(provider) {
+  if (provider === 'qwen') return { key: 'qwenKey', model: 'qwenModel', base: 'qwenBase' };
+  if (provider === 'doubao') return { key: 'doubaoKey', model: 'doubaoModel', base: 'doubaoBase' };
+  return { key: 'customKey', model: 'customModel', base: 'customBase' };
+}
+
+function cloudKey(cfg) {
+  return cfg[cloudFields(cfg.provider).key] || '';
+}
+
+function hasSavedKey(cfg) {
+  return Boolean(cfg.qwenKey || cfg.doubaoKey || cfg.customKey);
 }
 
 function recipe() {
@@ -198,48 +215,106 @@ function renderStyle() {
   )).join('');
 }
 
+function bindCfgField(id, field, isCheck) {
+  const input = $('#' + id);
+  if (!input) return;
+  input.addEventListener('input', event => {
+    const next = { ...loadCfg() };
+    next[field] = isCheck ? event.target.checked : event.target.value.trim();
+    saveCfg(next);
+    renderKeyStatus();
+  });
+  if (isCheck) {
+    input.addEventListener('change', event => {
+      const next = { ...loadCfg() };
+      next[field] = event.target.checked;
+      saveCfg(next);
+      renderKeyStatus();
+    });
+  }
+}
+
+function cloudSettingsHtml(cfg, ids) {
+  const fields = cloudFields(cfg.provider);
+  const proxyNote = cfg.provider === 'custom' ? '自定义接口默认直连；官方通义 / 豆包 / OpenAI 可勾选本站代理。' : '经本站代理（国内访问需要）';
+  return `<label class="studio-field"><span>API Key</span>
+      <input id="${ids.key}" type="password" value="${esc(cfg[fields.key])}" autocomplete="off">
+    </label>
+    <label class="studio-field"><span>模型</span>
+      <input id="${ids.model}" type="text" value="${esc(cfg[fields.model])}" autocomplete="off" spellcheck="false">
+    </label>
+    <label class="studio-field"><span>接口地址</span>
+      <input id="${ids.base}" type="url" value="${esc(cfg[fields.base])}" autocomplete="off" spellcheck="false" placeholder="https://api.openai.com">
+    </label>
+    <label class="studio-check"><input id="${ids.proxy}" type="checkbox"${cfg.useProxy ? ' checked' : ''}> ${proxyNote}</label>`;
+}
+
 function renderProvider() {
   const cfg = loadCfg();
-  document.querySelectorAll('#providerTabs button').forEach(button => {
+  document.querySelectorAll('#providerTabs button, #keyProviderTabs button').forEach(button => {
     button.setAttribute('aria-pressed', button.dataset.provider === cfg.provider);
   });
   const box = $('#providerSettings');
   if (cfg.provider === 'comfyui') {
     box.innerHTML = `<label class="studio-field"><span>ComfyUI 地址</span>
-      <input id="comfyUrl" type="url" value="${cfg.comfyUrl}" autocomplete="off" spellcheck="false">
+      <input id="comfyUrl" type="url" value="${esc(cfg.comfyUrl)}" autocomplete="off" spellcheck="false">
     </label>
     <div class="studio-inline">
       <button class="open-btn" type="button" id="detectComfy">检测连接</button>
       <p class="studio-status" id="comfyStatus"></p>
     </div>`;
-    $('#comfyUrl').addEventListener('change', event => {
-      saveCfg({ ...loadCfg(), comfyUrl: event.target.value.trim() || DEFAULT_CFG.comfyUrl });
-    });
+    bindCfgField('comfyUrl', 'comfyUrl');
     $('#detectComfy').addEventListener('click', () => detectComfy(true));
   } else {
-    const isQwen = cfg.provider === 'qwen';
-    box.innerHTML = `<label class="studio-field"><span>API Key</span>
-      <input id="apiKey" type="password" value="${isQwen ? cfg.qwenKey : cfg.doubaoKey}" autocomplete="off">
-    </label>
-    <label class="studio-field"><span>模型</span>
-      <input id="apiModel" type="text" value="${isQwen ? cfg.qwenModel : cfg.doubaoModel}" autocomplete="off" spellcheck="false">
-    </label>
-    <label class="studio-field"><span>接口地址</span>
-      <input id="apiBase" type="url" value="${isQwen ? cfg.qwenBase : cfg.doubaoBase}" autocomplete="off" spellcheck="false">
-    </label>
-    <label class="studio-check"><input id="useProxy" type="checkbox"${cfg.useProxy ? ' checked' : ''}> 经本站代理（国内访问需要）</label>`;
-    const bind = (id, field) => {
-      $('#' + id).addEventListener('change', event => {
-        const next = { ...loadCfg() };
-        next[field] = id === 'useProxy' ? event.target.checked : event.target.value.trim();
-        saveCfg(next);
-      });
-    };
-    bind('apiKey', isQwen ? 'qwenKey' : 'doubaoKey');
-    bind('apiModel', isQwen ? 'qwenModel' : 'doubaoModel');
-    bind('apiBase', isQwen ? 'qwenBase' : 'doubaoBase');
-    bind('useProxy', 'useProxy');
+    const fields = cloudFields(cfg.provider);
+    box.innerHTML = cloudSettingsHtml(cfg, { key: 'apiKey', model: 'apiModel', base: 'apiBase', proxy: 'useProxy' });
+    bindCfgField('apiKey', fields.key);
+    bindCfgField('apiModel', fields.model);
+    bindCfgField('apiBase', fields.base);
+    bindCfgField('useProxy', 'useProxy', true);
   }
+  renderKeyFields();
+  renderKeyStatus();
+}
+
+function renderKeyFields() {
+  const cfg = loadCfg();
+  const box = $('#keyFields');
+  if (!box) return;
+  if (cfg.provider === 'comfyui') {
+    box.innerHTML = `<label class="studio-field"><span>ComfyUI 地址</span>
+      <input id="keyComfyUrl" type="url" value="${esc(cfg.comfyUrl)}" autocomplete="off" spellcheck="false">
+    </label>
+    <div class="studio-inline">
+      <button class="open-btn" type="button" id="keyDetectComfy">检测连接</button>
+      <p class="studio-status" id="keyComfyStatus"></p>
+    </div>`;
+    bindCfgField('keyComfyUrl', 'comfyUrl');
+    $('#keyDetectComfy').addEventListener('click', () => detectComfy(true));
+    return;
+  }
+  const fields = cloudFields(cfg.provider);
+  box.innerHTML = cloudSettingsHtml(cfg, { key: 'keyApiKey', model: 'keyApiModel', base: 'keyApiBase', proxy: 'keyUseProxy' });
+  bindCfgField('keyApiKey', fields.key);
+  bindCfgField('keyApiModel', fields.model);
+  bindCfgField('keyApiBase', fields.base);
+  bindCfgField('keyUseProxy', 'useProxy', true);
+}
+
+function renderKeyStatus() {
+  const cfg = loadCfg();
+  const status = $('#runStatus');
+  if (!status || status.dataset.busy === '1') return;
+  if (cfg.provider === 'comfyui') {
+    status.textContent = '本机 ComfyUI';
+    return;
+  }
+  status.textContent = cloudKey(cfg) ? '已保存密钥' : '未设置密钥';
+}
+
+function openKeySettings() {
+  renderProvider();
+  $('#keyDialog').showModal();
 }
 
 function syncPrompt(force) {
@@ -255,18 +330,19 @@ function setStatus(message) {
 
 async function detectComfy(manual) {
   const cfg = loadCfg();
+  if (!manual && (hasSavedKey(cfg) || cfg.provider === 'custom')) return false;
   try {
     const found = await GEN.detectComfy(cfg.comfyUrl);
     if (!found) throw new Error('未找到本机 ComfyUI');
     saveCfg({ ...loadCfg(), provider: 'comfyui', comfyUrl: found.baseUrl });
     renderProvider();
-    const status = $('#comfyStatus');
+    const status = $('#comfyStatus') || $('#keyComfyStatus');
     if (status) status.textContent = found.info;
     setStatus(found.info);
     return true;
   } catch (error) {
     if (manual) {
-      const status = $('#comfyStatus');
+      const status = $('#comfyStatus') || $('#keyComfyStatus');
       if (status) status.textContent = error.message;
       setStatus(error.message);
     }
@@ -300,7 +376,14 @@ function setBusy(busy, message) {
   const progress = $('#resultProgress');
   progress.hidden = !busy;
   progress.textContent = message || '正在生成…';
-  setStatus(busy ? (message || '正在生成…') : '');
+  const status = $('#runStatus');
+  status.dataset.busy = busy ? '1' : '';
+  if (busy) {
+    setStatus(message || '正在生成…');
+    return;
+  }
+  setStatus(message || '');
+  renderKeyStatus();
 }
 
 function showError(message) {
@@ -317,6 +400,11 @@ async function runGenerate() {
     showError(`还差：${missing.join('、')}`);
     return;
   }
+  if (cfg.provider !== 'comfyui' && !cloudKey(cfg)) {
+    showError('请先填写 API Key');
+    openKeySettings();
+    return;
+  }
   const prompt = $('#promptInput').value.trim() || GEN.buildRecipePrompt(current, cfg.style);
   showError('');
   setBusy(true, '正在准备…');
@@ -330,14 +418,14 @@ async function runGenerate() {
         onProgress: info => setBusy(true, info.message)
       });
     } else {
-      const isQwen = cfg.provider === 'qwen';
+      const fields = cloudFields(cfg.provider);
       result = await GEN.generateCloud({
         provider: cfg.provider,
         recipe: current,
         prompt,
-        apiKey: isQwen ? cfg.qwenKey : cfg.doubaoKey,
-        baseUrl: isQwen ? cfg.qwenBase : cfg.doubaoBase,
-        model: isQwen ? cfg.qwenModel : cfg.doubaoModel,
+        apiKey: cfg[fields.key],
+        baseUrl: cfg[fields.base],
+        model: cfg[fields.model],
         useProxy: cfg.useProxy
       });
     }
@@ -436,17 +524,32 @@ function bind() {
     syncPrompt();
   });
 
-  $('#providerTabs').addEventListener('click', event => {
+  const onProvider = event => {
     const button = event.target.closest('[data-provider]');
     if (!button) return;
-    saveCfg({ ...loadCfg(), provider: button.dataset.provider });
+    const next = { ...loadCfg(), provider: button.dataset.provider };
+    if (next.provider === 'custom') next.useProxy = false;
+    if (next.provider === 'qwen' || next.provider === 'doubao') next.useProxy = true;
+    saveCfg(next);
     renderProvider();
-  });
+  };
+  $('#providerTabs').addEventListener('click', onProvider);
+  $('#keyProviderTabs').addEventListener('click', onProvider);
 
   $('#promptInput').addEventListener('input', () => { $('#promptInput').dataset.dirty = '1'; });
   $('#randomRecipe').addEventListener('click', randomRecipe);
   $('#clearRecipe').addEventListener('click', clearRecipe);
+  $('#openKeySettings').addEventListener('click', openKeySettings);
   $('#runGenerate').addEventListener('click', runGenerate);
+  $('#keyForm').addEventListener('submit', event => {
+    event.preventDefault();
+    $('#keyDialog').close();
+    renderKeyStatus();
+  });
+  $('#keyClose').addEventListener('click', () => $('#keyDialog').close());
+  $('#keyDialog').addEventListener('click', event => {
+    if (event.target === $('#keyDialog')) $('#keyDialog').close();
+  });
 
   window.addEventListener('pose-atlas-recipe', () => {
     PANES.forEach(pane => {

@@ -74,10 +74,37 @@ function dataUrlToBlob(dataUrl) {
 }
 
 async function smartFetch(targetUrl, init, useProxy) {
-  if (!useProxy) return fetch(targetUrl, init);
-  const headers = new Headers(init.headers || {});
-  headers.set('x-target-url', targetUrl);
-  return fetch('/api/proxy', { method: init.method || 'POST', headers, body: init.body });
+  try {
+    if (!useProxy) return await fetch(targetUrl, init);
+    const headers = new Headers(init.headers || {});
+    headers.set('x-target-url', targetUrl);
+    return await fetch('/api/proxy', { method: init.method || 'POST', headers, body: init.body });
+  } catch (error) {
+    if (useProxy) throw error;
+    throw new Error('无法直连该接口。请确认对方允许浏览器跨域，或改用通义千问 / 豆包走本站代理。');
+  }
+}
+
+function resolveEndpoint(provider, baseUrl) {
+  const base = String(baseUrl || '').replace(/\/+$/, '');
+  if (!base) throw new Error('请填写接口地址');
+  if (/\/(images\/(generations|edits)|chat\/completions|multimodal-generation\/generation)$/.test(base)) return base;
+  if (provider === 'qwen' || /dashscope/i.test(base)) {
+    return `${base}/api/v1/services/aigc/multimodal-generation/generation`;
+  }
+  if (provider === 'doubao' || /volces\.com/i.test(base)) {
+    return `${base}/api/v3/images/generations`;
+  }
+  if (/\/v1$/.test(base)) return `${base}/images/generations`;
+  return `${base}/v1/images/generations`;
+}
+
+function cloudKind(provider, baseUrl) {
+  const base = String(baseUrl || '');
+  if (provider === 'qwen' || /dashscope/i.test(base) || /multimodal-generation/.test(base)) return 'qwen';
+  if (provider === 'doubao' || /volces\.com/i.test(base) || /\/api\/v3\/images/.test(base)) return 'doubao';
+  if (/chat\/completions/.test(base)) return 'chat';
+  return 'openai';
 }
 
 function extractImage(json) {
@@ -87,7 +114,22 @@ function extractImage(json) {
   if (Array.isArray(choices)) {
     for (const part of choices) {
       if (part?.image) return part.image.startsWith('http') || part.image.startsWith('data:') ? part.image : `data:image/png;base64,${part.image}`;
+      if (part?.image_url?.url) return part.image_url.url;
     }
+  }
+  const openaiContent = json?.choices?.[0]?.message?.content;
+  if (Array.isArray(openaiContent)) {
+    for (const part of openaiContent) {
+      if (part?.image_url?.url) return part.image_url.url;
+      if (part?.image) return part.image.startsWith('http') || part.image.startsWith('data:') ? part.image : `data:image/png;base64,${part.image}`;
+    }
+  }
+  const text = typeof choices === 'string' ? choices : openaiContent;
+  if (typeof text === 'string') {
+    const dataMatch = text.match(/data:image\/[a-zA-Z0-9+.-]+;base64,[A-Za-z0-9+/=\s]+/);
+    if (dataMatch) return dataMatch[0].replace(/\s+/g, '');
+    const urlMatch = text.match(/https?:\/\/\S+\.(?:png|jpe?g|webp)/i);
+    if (urlMatch) return urlMatch[0];
   }
   return null;
 }
@@ -229,38 +271,63 @@ async function generateCloud({ provider, recipe, prompt, apiKey, baseUrl, model,
   ].filter(Boolean).map(assetUrl);
   if (!sources.length) throw new Error('请先选择至少 1 张参考图');
   if (!apiKey) throw new Error('请先填写 API Key');
-  let res;
-  let json;
-  if (provider === 'qwen') {
-    const endpoint = `${baseUrl.replace(/\/+$/, '')}/api/v1/services/aigc/multimodal-generation/generation`;
-    res = await smartFetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model,
-        input: { messages: [{ role: 'user', content: [...sources.map(image => ({ image })), { text: prompt }] }] },
-        parameters: { size: '1024*1536', n: 1, prompt_extend: true, watermark: false }
-      })
-    }, useProxy);
-    json = await res.json();
+  const endpoint = resolveEndpoint(provider, baseUrl);
+  const kind = cloudKind(provider, endpoint);
+  const headers = { Authorization: `Bearer ${apiKey}` };
+  let body;
+  if (kind === 'qwen') {
+    headers['Content-Type'] = 'application/json';
+    body = JSON.stringify({
+      model,
+      input: { messages: [{ role: 'user', content: [...sources.map(image => ({ image })), { text: prompt }] }] },
+      parameters: { size: '1024*1536', n: 1, prompt_extend: true, watermark: false }
+    });
+  } else if (kind === 'chat') {
+    headers['Content-Type'] = 'application/json';
+    body = JSON.stringify({
+      model,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'text', text: prompt },
+          ...sources.map(url => ({ type: 'image_url', image_url: { url } }))
+        ]
+      }]
+    });
+  } else if (kind === 'doubao') {
+    headers['Content-Type'] = 'application/json';
+    body = JSON.stringify({
+      model,
+      prompt,
+      image: sources,
+      size: '2K',
+      watermark: false,
+      response_format: 'b64_json',
+      n: 1
+    });
   } else {
-    let endpoint = baseUrl.replace(/\/+$/, '');
-    if (!endpoint.endsWith('/images/generations')) endpoint += '/api/v3/images/generations';
-    res = await smartFetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model,
-        prompt,
-        image: sources,
-        size: '2K',
-        watermark: false,
-        response_format: 'b64_json'
-      })
-    }, useProxy);
-    json = await res.json();
+    headers['Content-Type'] = 'application/json';
+    body = JSON.stringify({
+      model,
+      prompt,
+      image: sources,
+      size: '1024x1536',
+      response_format: 'b64_json',
+      n: 1
+    });
   }
-  if (!res.ok) throw new Error(json?.error?.message || json?.message || `请求失败 HTTP ${res.status}`);
+  const res = await smartFetch(endpoint, { method: 'POST', headers, body }, useProxy);
+  let json = {};
+  try {
+    json = await res.json();
+  } catch {
+    json = {};
+  }
+  if (!res.ok) {
+    const message = json?.error?.message || json?.message || json?.error || `请求失败 HTTP ${res.status}`;
+    if (res.status === 403 && useProxy) throw new Error('本站代理仅支持通义、豆包和官方 OpenAI。自定义接口请关闭代理后直连。');
+    throw new Error(typeof message === 'string' ? message : `请求失败 HTTP ${res.status}`);
+  }
   const imageUrl = extractImage(json);
   if (!imageUrl) throw new Error('接口已响应但未解析到图片');
   return { imageUrl, modelUsed: model, providerUsed: provider };
