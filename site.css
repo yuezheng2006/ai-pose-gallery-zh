@@ -323,37 +323,49 @@ main{padding:22px 0 54px}
 .atlas-toast{position:fixed;left:50%;bottom:28px;z-index:120;transform:translateX(-50%);min-height:40px;padding:8px 16px;border-radius:10px;background:var(--text);color:#fff;font-size:13px;font-weight:600;box-shadow:0 8px 24px rgba(23,26,33,.2)}
 .safe-dialog-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
 .studio-hero{padding-bottom:8px}
-.studio-main{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,.9fr);gap:22px;padding:18px 0 56px;align-items:start}
-.studio-board,.studio-result{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
-.studio-slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-.studio-slot{display:flex;flex-direction:column;min-width:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface-2)}
-.studio-slot img{display:block;width:100%;aspect-ratio:3/4;object-fit:cover;background:#eef0f4}
-.studio-slot-empty,.studio-slot-copy{padding:12px}
-.studio-slot-empty strong,.studio-slot-copy strong{display:block;font-size:13px}
-.studio-slot-empty span,.studio-slot-copy span{display:block;margin-top:4px;color:var(--text-3);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.studio-slot-bar{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;padding:8px;border-top:1px solid var(--line)}
-.studio-slot-bar .open-btn{min-height:34px;font-size:12px;font-weight:600}
-.studio-slot-bar .open-btn:disabled{opacity:.4;cursor:not-allowed}
-.studio-slot-actions{display:flex;gap:8px;margin:12px 0 16px}
-.studio-slot-actions .open-btn{min-height:38px;padding:0 14px}
+.studio-page{padding:16px 0 56px}
+.studio-pickers{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.studio-pane{min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px}
+.studio-pane-hd{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.studio-pane-hd h2{margin:0;font-size:16px;font-weight:700}
+.link-btn{border:0;background:none;color:var(--text-2);font-size:13px;padding:4px 0;cursor:pointer}
+.link-btn:hover{color:var(--text)}
+.studio-search{width:100%;height:40px;margin-bottom:8px;padding:0 12px;border:1px solid var(--line-strong);border-radius:10px;background:#fff;font-size:14px}
+.studio-tabs{margin-bottom:10px;overflow-x:auto}
+.studio-picked{min-height:52px;margin-bottom:10px}
+.studio-picked-empty{margin:0;padding:12px;color:var(--text-3);font-size:13px;text-align:center;border:1px dashed var(--line);border-radius:10px}
+.studio-picked-card{display:flex;align-items:center;gap:10px;padding:6px 0}
+.studio-picked-card img{width:40px;height:54px;object-fit:cover;border-radius:6px;background:#eef0f4}
+.studio-picked-card strong{display:block;font-size:13px}
+.studio-picked-card span{display:block;color:var(--text-3);font-size:12px}
+.studio-picker{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:6px;max-height:min(48vh,460px);overflow:auto}
+.studio-pick{padding:0;border:1px solid transparent;border-radius:8px;background:#eef0f4;overflow:hidden;cursor:pointer}
+.studio-pick img{display:block;width:100%;aspect-ratio:3/4;object-fit:cover}
+.studio-pick.on,.studio-pick[aria-pressed="true"]{border-color:var(--text)}
+.studio-more{width:100%;margin-top:8px;min-height:36px;font-size:13px}
+.studio-runbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:16px 0;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
+.studio-runbar .download-btn{min-width:120px}
+.studio-runbar .studio-status{flex:1 1 160px}
+.studio-output{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px}
 .studio-field{display:block;margin:0 0 14px}
 .studio-field>span{display:block;margin-bottom:6px;color:var(--text-2);font-size:12px;font-weight:600}
 .studio-field textarea,.studio-field input[type="text"],.studio-field input[type="url"],.studio-field input[type="password"]{width:100%;border:1px solid var(--line-strong);border-radius:10px;background:#fff;color:var(--text);padding:10px 12px;font-size:14px}
-.studio-field textarea{min-height:160px;resize:vertical;line-height:1.6}
+.studio-field textarea{min-height:140px;resize:vertical;line-height:1.6}
 .studio-check{display:flex;align-items:center;gap:8px;margin:8px 0 0;color:var(--text-2);font-size:13px}
 .studio-inline{display:flex;align-items:center;gap:10px;margin:8px 0 4px}
-.studio-status{margin:0;color:var(--text-2);font-size:12px}
-.studio-hint{margin:10px 0 0;color:var(--text-3);font-size:12px;line-height:1.7}
-.studio-hint code{font:inherit}
-.studio-run{width:100%;margin-top:8px}
-.studio-canvas{position:relative;min-height:420px;display:grid;place-items:center;background:#eef0f4;border-radius:12px;overflow:hidden}
+.studio-status{margin:0;color:var(--text-2);font-size:13px}
+.studio-hint{margin:12px 0 0;color:var(--text-3);font-size:12px;line-height:1.7}
+.studio-canvas{position:relative;min-height:360px;display:grid;place-items:center;background:#eef0f4;border-radius:12px;overflow:hidden}
 .studio-canvas img{display:block;width:100%;height:100%;max-height:720px;object-fit:contain;background:#eef0f4}
 .studio-canvas p{margin:0;padding:24px;color:var(--text-3);text-align:center}
 .studio-progress{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);margin:0;padding:6px 12px;border-radius:99px;background:rgba(23,26,33,.78);color:#fff;font-size:12px}
 .studio-result-actions{display:grid;gap:10px;margin-top:12px}
 .studio-error{margin:0;color:#b42318;font-size:13px}
+.studio-more-settings{margin-top:16px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px}
+.studio-more-settings summary{cursor:pointer;font-size:14px;font-weight:600}
+.studio-settings-body{margin-top:14px}
 @media(max-width:860px){
-  .studio-main{grid-template-columns:1fr}
-  .studio-slots{grid-template-columns:1fr}
+  .studio-pickers{grid-template-columns:1fr}
+  .studio-picker{max-height:36vh}
   .studio-canvas{min-height:280px}
 }

@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light">
-<title>合成台｜人像、服装、姿势三图合成</title>
-<meta name="description" content="把人像、服装、姿势参考图合成为一张角色图。可直连本机 ComfyUI，或使用通义千问、豆包接口。">
+<title>合成台｜选人像、服装、姿势，点生成</title>
+<meta name="description" content="在同一页挑选人像、服装、姿势，用本机 ComfyUI 或通义千问、豆包合成一张角色图。">
 <meta name="robots" content="index, follow, max-image-preview:large">
 <meta name="application-name" content="POSE Atlas">
 <meta name="theme-color" content="#f5f7fb">
@@ -15,13 +15,13 @@
 <meta property="og:type" content="website">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:site_name" content="POSE Atlas">
-<meta property="og:title" content="合成台｜人像、服装、姿势三图合成">
-<meta property="og:description" content="把人像、服装、姿势参考图合成为一张角色图。可直连本机 ComfyUI，或使用通义千问、豆包接口。">
+<meta property="og:title" content="合成台｜选人像、服装、姿势，点生成">
+<meta property="og:description" content="在同一页挑选人像、服装、姿势，用本机 ComfyUI 或通义千问、豆包合成一张角色图。">
 <meta property="og:url" content="https://ai-pose.cyber101.cc/studio/">
 <meta property="og:image" content="https://pose-images.cyber101.cc/og-cover.jpg">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="合成台｜人像、服装、姿势三图合成">
-<meta name="twitter:description" content="把人像、服装、姿势参考图合成为一张角色图。">
+<meta name="twitter:title" content="合成台｜选人像、服装、姿势，点生成">
+<meta name="twitter:description" content="在同一页挑选人像、服装、姿势，点一下生成。">
 <meta name="twitter:image" content="https://pose-images.cyber101.cc/og-cover.jpg">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23171a21'/%3E%3Ccircle cx='16' cy='9' r='3.2' fill='white'/%3E%3Cpath d='M16 13.5c-2.5 0-4 1.6-4 3.8v3.8h2v7h4v-7h2v-3.8c0-2.2-1.5-3.8-4-3.8z' fill='white'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="/site.css">
@@ -47,41 +47,56 @@
   </div>
   <div class="shell hero studio-hero">
     <div>
-      <h1>合成台</h1>
-      <p class="hero-desc">从图库选好人像、服装、姿势，或在本页上传。默认直连本机 ComfyUI（Qwen Image Edit 2509，4 步 Lightning）。</p>
+      <h1>选三张，点生成</h1>
+      <p class="hero-desc">人像、服装、姿势都在本页点选。检测到本机 ComfyUI 就用它，否则用通义千问或豆包。</p>
     </div>
   </div>
 </header>
-<main class="shell studio-main">
-  <section class="studio-board" aria-label="参考槽位">
-    <div class="studio-slots" id="studioSlots"></div>
-    <div class="studio-slot-actions">
-      <button class="open-btn" type="button" id="randomRecipe">随机填入</button>
-      <button class="open-btn" type="button" id="clearRecipe">清空槽位</button>
-    </div>
-    <label class="studio-field">
-      <span>提示词</span>
-      <textarea id="promptInput" rows="8" spellcheck="false"></textarea>
-    </label>
-    <div class="studio-field">
-      <span>画面风格</span>
-      <div class="segmented" id="stylePreset" role="group" aria-label="画面风格"></div>
-    </div>
-    <div class="studio-field">
-      <span>生成方式</span>
-      <div class="segmented" id="providerTabs" role="group" aria-label="生成方式">
-        <button type="button" data-provider="comfyui" aria-pressed="true">本机 ComfyUI</button>
-        <button type="button" data-provider="qwen" aria-pressed="false">通义千问</button>
-        <button type="button" data-provider="doubao" aria-pressed="false">豆包</button>
-      </div>
-    </div>
-    <div class="studio-settings" id="providerSettings"></div>
-    <button class="download-btn studio-run" type="button" id="runGenerate">开始合成</button>
-    <p class="studio-hint">素材仅供绘画与动作参考。禁止违法用途或未经授权的真人换脸。密钥只保存在本机浏览器。</p>
+<main class="shell studio-page">
+  <div class="studio-pickers">
+    <section class="studio-pane" data-pane="portrait">
+      <header class="studio-pane-hd">
+        <h2>人像</h2>
+        <button class="link-btn" type="button" data-upload="portrait">上传</button>
+      </header>
+      <input class="studio-search" id="portraitSearch" type="search" placeholder="搜索发型、分区、编号" autocomplete="off">
+      <div class="segmented studio-tabs" id="portraitTabs" role="tablist"></div>
+      <div class="studio-picked" id="portraitPicked"></div>
+      <div class="studio-picker" id="portraitGrid" role="listbox" aria-label="人像列表"></div>
+      <button class="open-btn studio-more" type="button" data-more="portrait" hidden>显示更多</button>
+    </section>
+    <section class="studio-pane" data-pane="costume">
+      <header class="studio-pane-hd">
+        <h2>服装</h2>
+        <button class="link-btn" type="button" data-upload="costume">上传</button>
+      </header>
+      <input class="studio-search" id="costumeSearch" type="search" placeholder="搜索服装、标签、编号" autocomplete="off">
+      <div class="segmented studio-tabs" id="costumeTabs" role="tablist"></div>
+      <div class="studio-picked" id="costumePicked"></div>
+      <div class="studio-picker" id="costumeGrid" role="listbox" aria-label="服装列表"></div>
+      <button class="open-btn studio-more" type="button" data-more="costume" hidden>显示更多</button>
+    </section>
+    <section class="studio-pane" data-pane="pose">
+      <header class="studio-pane-hd">
+        <h2>姿势</h2>
+        <button class="link-btn" type="button" data-upload="pose">上传</button>
+      </header>
+      <input class="studio-search" id="poseSearch" type="search" placeholder="搜索姿势名、编号、视角" autocomplete="off">
+      <div class="segmented studio-tabs" id="poseTabs" role="tablist"></div>
+      <div class="studio-picked" id="posePicked"></div>
+      <div class="studio-picker" id="poseGrid" role="listbox" aria-label="姿势列表"></div>
+      <button class="open-btn studio-more" type="button" data-more="pose" hidden>显示更多</button>
+    </section>
+  </div>
+  <section class="studio-runbar">
+    <button class="open-btn" type="button" id="randomRecipe">随机一套</button>
+    <button class="open-btn" type="button" id="clearRecipe">清空</button>
+    <button class="download-btn" type="button" id="runGenerate">生成</button>
+    <p class="studio-status" id="runStatus"></p>
   </section>
-  <section class="studio-result" aria-label="生成结果">
+  <section class="studio-output" aria-label="生成结果">
     <div class="studio-canvas" id="resultCanvas">
-      <p id="resultEmpty">还没有结果。选齐三张参考图后点开始合成。</p>
+      <p id="resultEmpty">点选三张参考图，再点生成。</p>
       <img id="resultImage" alt="生成结果" hidden>
       <p class="studio-progress" id="resultProgress" hidden></p>
     </div>
@@ -90,6 +105,29 @@
       <p class="studio-error" id="resultError" hidden></p>
     </div>
   </section>
+  <details class="studio-more-settings">
+    <summary>接口与提示词</summary>
+    <div class="studio-settings-body">
+      <div class="studio-field">
+        <span>生成方式</span>
+        <div class="segmented" id="providerTabs" role="group" aria-label="生成方式">
+          <button type="button" data-provider="qwen" aria-pressed="true">通义千问</button>
+          <button type="button" data-provider="doubao" aria-pressed="false">豆包</button>
+          <button type="button" data-provider="comfyui" aria-pressed="false">本机 ComfyUI</button>
+        </div>
+      </div>
+      <div id="providerSettings"></div>
+      <div class="studio-field">
+        <span>画面风格</span>
+        <div class="segmented" id="stylePreset" role="group" aria-label="画面风格"></div>
+      </div>
+      <label class="studio-field">
+        <span>提示词</span>
+        <textarea id="promptInput" rows="6" spellcheck="false"></textarea>
+      </label>
+    </div>
+  </details>
+  <p class="studio-hint">素材仅供绘画与动作参考。禁止违法用途或未经授权的真人换脸。密钥只保存在本机浏览器。</p>
 </main>
 <footer class="site-footer">
   <div class="shell footer-inner">
